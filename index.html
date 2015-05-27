@@ -1,0 +1,448 @@
+<!doctype html>
+<html lang="en" ng-app="tictacno">
+<head>
+    <meta charset="utf-8">
+    <title>Tic Tac No!</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/foundation/5.5.2/css/normalize.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/foundation/5.5.2/css/foundation.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/2.1.4/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/foundation/5.5.2/js/foundation.min.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.3.15/angular.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/angular.js/1.3.15/angular-route.min.js"></script>
+    <style>
+        .gameboard-wrapper,
+        .gamemenu-wrapper {
+            width: 100%;
+            padding-bottom:100%;
+            position: relative;
+        }
+
+        .gameboard,
+        .gamemenu {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            left: 0;
+            right: 0;
+        }
+
+        .gameboard-row {
+            width: 100%;
+            height: 33%;
+        }
+
+        .gameboard-grid,
+        .gamemenu-grid {
+            width: 33%;
+            height: 100%;
+            display: inline-block;
+            text-align: center;
+        }
+
+        .gameboard-grid:before,
+        .gamemenu-grid:before {
+            content: '';
+            display: inline-block;
+            height: 100%;
+            vertical-align: middle;
+        }
+
+        .gamemenu-grid {
+            width: 50%;
+            height: 50%;
+        }
+
+        .gameboard-top {
+            border-bottom: 1px solid black;
+        }
+
+        .gameboard-middle {
+            border-top: 1px solid black;
+            border-bottom: 1px solid black;
+        }
+
+        .gameboard-bottom {
+            border-top: 1px solid black;
+        }
+
+        .gameboard-left {
+            border-right: 1px solid black;
+        }
+
+        .gameboard-center {
+            border-right: 1px solid black;
+            border-left: 1px solid black;
+        }
+
+        .gameboard-right {
+            border-left: 1px solid black;
+        }
+
+        .gameboard-o .shape {
+            position:relative;
+            font-size:9em;
+            border:.15em solid green;
+            border-radius: .5em;
+            width: 50%;
+            height: 50%;
+            margin: auto;
+            display: inline-block;
+            vertical-align: middle;
+        }
+
+        .gameboard-x .shape {
+            position:relative;
+            font-size:9em;
+            background: linear-gradient(to bottom, transparent 35%, #d00 35%, #d00 65%,  transparent 65%),
+                        linear-gradient(to right, transparent 35%, #d00 35%, #d00 65%, transparent 65%);
+            transform: rotate(45deg);
+            width: 50%;
+            height: 50%;
+            margin: auto;
+            display: inline-block;
+            vertical-align: middle;
+        }
+
+        .gamemenu .gamemenu-grid .shape:hover {
+            cursor: pointer;
+            cursor: hand;
+        }
+
+        .gameboard-grid:hover {
+            background-color: lightgray;
+        }
+
+        #ai-thinking {
+            width: 100%;
+            height: 100%;
+            z-index: 1000;
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            background-color: rgba(128, 128, 128, 0.4);
+        }
+
+        #ai-thinking:before {
+            content: '';
+            display: inline-block;
+            height: 100%;
+            margin: -5px;
+            vertical-align: middle;
+        }
+
+        #ai-thinking div {
+            display:inline-block;
+            width: 100%;
+            text-align: center;
+            vertical-align: middle;
+        }
+
+    </style>
+</head>
+<body>
+<ng-view></ng-view>
+<script type="text/ng-template" id="template/menu.html">
+    <div class="row">
+        <div class="large-6 large-offset-3 columns">
+
+            <h1 class="gametitle text-center">{{game.name}}</h1>
+            <div class="gamemenu-wrapper">
+                <div class="gamemenu">
+                    <div class="text-center">
+                        <h3 class="subheader">Choose Your Symbol</h3>
+                    </div>
+                    <div ng-click="startGame(true)" class="gamemenu-grid gameboard-x"><div class="shape"></div></div><!--
+                    --><div ng-click="startGame(false)" class="gamemenu-grid gameboard-o"><div class="shape"></div></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</script>
+
+
+<script type="text/ng-template" id="template/game.html">
+<div class="row">
+    <div class="large-6 large-offset-3 columns">
+
+        <h1 class="gametitle text-center">{{game.name}}</h1>
+        <div ng-show="game.game_over">
+            <h2 ng-show="game.winner" class="text-center">{{game.winner == 1 ? 'X' : 'O'}}'s Win!</h2>
+            <h2 ng-show="game.draw" class="text-center">Draw!</h2>
+            <p class="text-center"><a href="#/">Play Again?</a></p>
+        </div>
+        <div class="gameboard-wrapper">
+            <div gameboard class="gameboard">
+                <div class="gameboard-row">
+                    <div ng-click="foo();game.active_player.makeMove(0,0);" ng-class="{'gameboard-x': game.board.getState()[0][0] == 1,'gameboard-o': game.board.getState()[0][0] == 2}" class="gameboard-grid gameboard-top gameboard-left"><div class="shape"></div></div><!--
+                    --><div ng-click="game.active_player.makeMove(0,1);" ng-class="{'gameboard-x': game.board.getState()[0][1] == 1,'gameboard-o': game.board.getState()[0][1] == 2}" class="gameboard-grid gameboard-top gameboard-center"><div class="shape"></div></div><!--
+                    --><div ng-click="game.active_player.makeMove(0,2);" ng-class="{'gameboard-x': game.board.getState()[0][2] == 1,'gameboard-o': game.board.getState()[0][2] == 2}" class="gameboard-grid gameboard-top gameboard-right"><div class="shape"></div></div>
+                </div>
+                <div class="gameboard-row">
+                    <div ng-click="game.active_player.makeMove(1,0);" ng-class="{'gameboard-x': game.board.getState()[1][0] == 1,'gameboard-o': game.board.getState()[1][0] == 2}" class="gameboard-grid gameboard-middle gameboard-left"><div class="shape"></div></div><!--
+                    --><div ng-click="game.active_player.makeMove(1,1);" ng-class="{'gameboard-x': game.board.getState()[1][1] == 1,'gameboard-o': game.board.getState()[1][1] == 2}" class="gameboard-grid gameboard-middle gameboard-center"><div class="shape"></div></div><!--
+                    --><div ng-click="game.active_player.makeMove(1,2);" ng-class="{'gameboard-x': game.board.getState()[1][2] == 1,'gameboard-o': game.board.getState()[1][2] == 2}" class="gameboard-grid gameboard-middle gameboard-right"><div class="shape"></div></div>
+                </div>
+                <div class="gameboard-row">
+                    <div ng-click="game.active_player.makeMove(2,0);" ng-class="{'gameboard-x': game.board.getState()[2][0] == 1,'gameboard-o': game.board.getState()[2][0] == 2}" class="gameboard-grid gameboard-bottom gameboard-left"><div class="shape"></div></div><!--
+                    --><div ng-click="game.active_player.makeMove(2,1);" ng-class="{'gameboard-x': game.board.getState()[2][1] == 1,'gameboard-o': game.board.getState()[2][1] == 2}" class="gameboard-grid gameboard-bottom gameboard-center"><div class="shape"></div></div><!--
+                    --><div ng-click="game.active_player.makeMove(2,2);" ng-class="{'gameboard-x': game.board.getState()[2][2] == 1,'gameboard-o': game.board.getState()[2][2] == 2}" class="gameboard-grid gameboard-bottom gameboard-right"><div class="shape"></div></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<div ng-show="ai_thinking" id="ai-thinking">
+    <div>
+        <img src="imgs/ajax-loader.gif">
+    </div>
+</div>
+</script>
+
+<script>
+    var ticTacNoApp = angular.module('tictacno', ['ngRoute']);
+
+    ticTacNoApp.config(['$routeProvider',
+        function($routeProvider) {
+            $routeProvider.
+                    when('/', {
+                        templateUrl: 'template/menu.html',
+                        controller: 'GameCtrl'
+                    }).
+                    when('/game', {
+                        templateUrl: 'template/game.html',
+                        controller: 'GameCtrl'
+                    }).
+                    otherwise({
+                        redirectTo: '/'
+                    });
+        }
+    ]);
+
+    ticTacNoApp.directive('gameboard', ['$timeout', function($timeout) {
+        return {
+            link: function($scope, element, attrs) {
+                $scope.$on('startgame', function() {
+                    $timeout(function() {
+                        $scope.player.symbol = window.player_first ? 1 : 2;
+                        $scope.ai.symbol = window.player_first ? 2 : 1;
+                        $scope.game.setActivePlayer(window.player_first ? $scope.player : $scope.ai);
+                        $scope.$apply();
+                    }, 500, false);
+                });
+            }
+        };
+    }]);
+
+    ticTacNoApp.controller('GameCtrl', function($scope, $location, $timeout) {
+        var Board = function() {
+            // 0 - Empty, 1 - X, 2 - O
+            this.board_state = [[0,0,0],[0,0,0],[0,0,0]];
+            this.X = 1;
+            this.O = 2;
+            this.isFull = function() {
+                return (this.board_state[0][0] &&
+                        this.board_state[0][1] &&
+                        this.board_state[0][2] &&
+                        this.board_state[1][0] &&
+                        this.board_state[1][1] &&
+                        this.board_state[1][2] &&
+                        this.board_state[2][0] &&
+                        this.board_state[2][1] &&
+                        this.board_state[2][2]);
+            };
+            this.getSpace = function(x, y) {
+                return this.board_state[x][y];
+            };
+            this.setSpace = function(x, y, symbol) {
+                this.board_state[x][y] = symbol;
+            };
+            this.getPossibleMoves = function() {
+                var moves = [];
+                for(var x = 0; x < 3; x++) {
+                    for(var y = 0; y < 3; y++) {
+                        if(this.board_state[x][y] == 0) {
+                            moves.push({x:x,y:y});
+                        }
+                    }
+                }
+                return moves;
+            };
+            this.setState = function(state) {
+                this.board_state = state.map(function(row) {
+                    return row.slice();
+                });
+            };
+            this.getState = function() {
+                return this.board_state;
+            }
+            this.endState = function() {
+                if(this.getWinner())
+                    return true;
+                if(this.isFull())
+                    return true;
+                return false;
+            };
+            this.getWinner = function() {
+                var win_possibilities = [
+                    [[0,0],[0,1],[0,2]],
+                    [[1,0],[1,1],[1,2]],
+                    [[2,0],[2,1],[2,2]],
+                    [[0,0],[1,0],[2,0]],
+                    [[0,1],[1,1],[2,1]],
+                    [[0,2],[1,2],[2,2]],
+                    [[0,0],[1,1],[2,2]],
+                    [[0,2],[1,1],[2,0]],
+                ];
+
+                for(var i = 0; i < win_possibilities.length; i++) {
+                    var win = win_possibilities[i];
+                    if(this.board_state[win[0][0]][win[0][1]] == this.board_state[win[1][0]][win[1][1]] &&
+                        this.board_state[win[0][0]][win[0][1]] == this.board_state[win[2][0]][win[2][1]] &&
+                        this.board_state[win[0][0]][win[0][1]] !== 0) {
+                        if(this.board_state[win[0][0]][win[0][1]] == this.X) {
+                            return this.X;
+                        } else {
+                            return this.O;
+                        }
+                    }
+                }
+
+                return false;
+            };
+        };
+
+        $scope.startGame = function(player_first) {
+            $location.path('/game');
+            window.player_first = player_first;
+        };
+
+        $scope.game = {
+            name: 'Tic Tac No',
+            board: new Board(),
+            active_player: null,
+            game_over: false,
+            winner: false,
+            draw: false,
+            setGrid: function(x, y, symbol) {
+                if(this.board.getSpace(x,y) == 0) {
+                    this.board.setSpace(x,y, symbol);
+                    this.game_over = this.board.isFull() || this.board.getWinner();
+                    this.winner = this.board.getWinner();
+                    this.draw = this.game_over && !this.winner;
+                    return true;
+                }
+                return false
+            },
+            setActivePlayer: function(player) {
+                this.active_player = player;
+                /*
+                if(!this.board.isFull() && this.active_player == $scope.ai) {
+                    this.active_player.makeMove();
+                }
+                */
+            }
+        };
+
+        $scope.player = {
+            symbol: null,
+            makeMove: function(x, y) {
+                if($scope.game.setGrid(x, y, this.symbol)) {
+                    $scope.game.setActivePlayer($scope.ai);
+                }
+            }
+        };
+        $scope.ai_thinking = false;
+
+        $scope.ai = {
+            symbol: null,
+            makeMove: function() {
+                //var move = this.minimax($scope.game.board, null, true, 0);
+                var move = this.chooseMove($scope.game.board, null, 0, true);
+                move = move.move;
+                if($scope.game.setGrid(move.x, move.y, this.symbol)) {
+                    $scope.game.setActivePlayer($scope.player);
+                }
+                $scope.ai_thinking = false;
+                return;
+            },
+            endState: function(board) {
+                return board.isFull() || board.getWinner();
+            },
+            boardScore: function(board,depth) {
+                var winner = board.getWinner();
+                if(winner === false)
+                    return 0;
+                if(winner == this.symbol)
+                    return 10 - depth;
+                else
+                    return depth - 10;
+            },
+            chooseMove: function(board, move, depth, maximize) {
+                if(board.endState()) {
+                    return {
+                        score: this.boardScore(board, depth),
+                        board: board,
+                        move: move
+                    };
+                }
+
+                var moves = board.getPossibleMoves();
+                if(maximize) {
+                    var val = Number.NEGATIVE_INFINITY;
+
+                    var new_boards = [];
+                    var scores = [];
+
+                    for(var i = 0; i < moves.length; i++) {
+                        var new_board = new Board();
+                        new_board.setState(board.getState());
+                        new_board.setSpace(moves[i].x, moves[i].y, this.symbol);
+                        new_boards.push(new_board);
+                        var v = this.chooseMove(new_board, moves[i], depth+1, false);
+                        scores.push(v.score);
+                    }
+
+                    var max = scores.indexOf(Math.max.apply(Math, scores));
+
+                    return {score: scores[max], board:new_boards[max], move:moves[max]};
+                } else {
+                    var val = Number.NEGATIVE_INFINITY;
+                    var new_boards = [];
+                    var scores = [];
+
+                    for(var i = 0; i < moves.length; i++) {
+                        var new_board = new Board();
+                        new_board.setState(board.getState());
+                        new_board.setSpace(moves[i].x, moves[i].y, $scope.player.symbol);
+                        new_boards.push(new_board);
+                        var v = this.chooseMove(new_board, moves[i], depth+1, true);
+                        scores.push(v.score);
+                    }
+
+                    var min = scores.indexOf(Math.min.apply(Math, scores));
+
+                    return {score: scores[min], board:new_boards[min], move:moves[min]};
+                }
+            }
+        };
+
+        $scope.$watch('$viewContentLoaded',function() {
+            if($location.path() == '/game') {
+                $scope.$broadcast('startgame');
+            }
+        });
+        $scope.$watch('game.active_player', function() {
+            if($scope.game.active_player == $scope.ai && !$scope.game.board.isFull()) {
+                $scope.ai_thinking = true;
+                $timeout(function() {
+                    $scope.ai.makeMove()
+                }, 1000);
+            };
+        }, true);
+
+        if(typeof window.player_first == 'undefined')
+            window.player_first = true;
+    });
+</script>
+</body>
+</html>
